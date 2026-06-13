@@ -1,7 +1,5 @@
 import pygame
 
-import Tela_inicial
-
 pygame.init()
 pygame.mixer.init()
 

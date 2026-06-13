@@ -2,6 +2,8 @@ import pygame
 
 import botoes
 
+import musica
+
 pygame.init()
 largura = 800
 altura = 800
@@ -20,4 +22,4 @@ while Executando:
     for evento in pygame.event.get():
         if evento.type == pygame.QUIT:
             Executando = False
-
+            ll
