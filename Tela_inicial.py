@@ -2,6 +2,8 @@ import pygame
 
 import botoes
 
+import musica
+
 pygame.init()
 largura = 800
 altura = 800
