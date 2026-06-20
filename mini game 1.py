@@ -109,13 +109,13 @@ def verificar_senha(texto):
         erros.append("Senha deve possuir pelo menos 5 caracteres especiais.")
 
     if not verificar_capital(texto):
-        erros.append("Inclua uma capital valida.")
+        erros.append("Inclua uma capital válida.")
 
     if not verificar_ave(texto):
-        erros.append("Inclua uma ave que nao voa.")
+        erros.append("Inclua uma ave que não voa.")
 
     if not verificar_numeros(texto):
-        erros.append("A senha deve conter exatamente 7 numeros.")
+        erros.append("A senha deve conter exatamente 7 números.")
 
     return erros
 
@@ -185,8 +185,8 @@ while rodando:
         "- Entre 6 e 40 caracteres",
         "- Pelo menos 5 caracteres especiais",
         "- Uma capital da Europa Ocidental ou da antiga Iugoslavia",
-        "- Uma ave que nao voa",
-        "- Exatamente 7 numeros"
+        "- Uma ave que não voa",
+        "- Exatamente 7 números"
     ]
 
     y = 300
