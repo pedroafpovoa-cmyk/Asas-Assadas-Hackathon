@@ -226,11 +226,11 @@ while True:
         tela.blit(txt_c3, (315, 325))
 
         pygame.draw.rect(tela, VERMELHO_ALERTA, rect_btn_evitar_cookies, 0, 5)
-        txt_b1 = fonte_pqi.render("EVITAR COOKIES", True, BRANCO)
+        txt_b1 = fonte_pqi.render("ACEITAR TODOS", True, BRANCO)
         tela.blit(txt_b1, (362, 368))
 
-        pygame.draw.rect(tela, CINZA_ESCURO, rect_btn_aceitar_cookies, 0, 5)
-        txt_b2 = fonte_pqi.render("ACEITAR TODOS", True, PRETO)
+        pygame.draw.rect(tela, VERDE_SUCESSO, rect_btn_aceitar_cookies, 0, 5)
+        txt_b2 = fonte_pqi.render("EVITAR COOKIES", True, BRANCO)
         tela.blit(txt_b2, (542, 368))
 
     pygame.draw.rect(tela, CINZA_MEDIO, (0, 590, LARGURA, 60))
@@ -269,4 +269,4 @@ while True:
     pygame.display.flip()
     relogio.tick(60)
     
-    #py -3.12 task2.py
+    #py -3.12 task3.py

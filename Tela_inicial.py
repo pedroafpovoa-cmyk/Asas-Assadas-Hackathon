@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import pygame
 
 import botoes
@@ -25,7 +24,7 @@ while Executando:
             Executando = False
 
 pygame.quit()
-=======
+
 import pygame
 
 import botoes
@@ -51,5 +50,4 @@ while Executando:
         if evento.type == pygame.QUIT:
             Executando = False
 pygame.quit()
-#py -3.12 Tela_inicial.py 
->>>>>>> Stashed changes
+#py -3.12 Tela_inicial.py
