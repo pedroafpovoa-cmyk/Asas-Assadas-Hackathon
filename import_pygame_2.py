@@ -6,7 +6,7 @@ pygame.init()
 
 LARGURA, ALTURA = 1000, 650
 tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Jogo dos 7 Erros - Cibersegurança Avançado")
+pygame.display.set_caption("Jogo dos 7 Erros. Cibersegurança")
 
 # Fontes
 fonte_pqi = pygame.font.SysFont("Arial", 14)
@@ -204,19 +204,16 @@ while True:
     tela.blit(txt_email_lbl, (810, 385))
     pygame.draw.rect(tela, BRANCO, (810, 405, 125, 22))
     pygame.draw.rect(tela, CINZA_MEDIO, (810, 405, 125, 22), 1)
-    
-    # Campo Senha
+
     txt_senha_lbl = fonte_pqi.render("Senha do E-mail:", True, PRETO)
     tela.blit(txt_senha_lbl, (810, 435))
     pygame.draw.rect(tela, BRANCO, (810, 455, 125, 22))
     pygame.draw.rect(tela, CINZA_MEDIO, (810, 455, 125, 22), 1)
-    
-    # Botão Entrar (Causa Game Over se clicado)
+
     pygame.draw.rect(tela, AZUL_SITE, rect_btn_logar, 0, 3)
     txt_btn_entrar = fonte_pqi.render("ENTRAR", True, BRANCO)
     tela.blit(txt_btn_entrar, (850, 516))
 
-    # --- POP-UP DE COOKIES DE TERCEIROS ---
     if cookies_visivel:
         pygame.draw.rect(tela, BRANCO, rect_cookies, 0, 10)
         pygame.draw.rect(tela, PRETO, rect_cookies, 3, 10)
@@ -227,25 +224,21 @@ while True:
         tela.blit(txt_c1, (320, 270))
         tela.blit(txt_c2, (315, 305))
         tela.blit(txt_c3, (315, 325))
-        
-        # Botão Evitar (Salva o jogador)
+
         pygame.draw.rect(tela, VERMELHO_ALERTA, rect_btn_evitar_cookies, 0, 5)
         txt_b1 = fonte_pqi.render("EVITAR COOKIES", True, BRANCO)
         tela.blit(txt_b1, (362, 368))
-        
-        # Botão Aceitar (Causa Game Over)
+
         pygame.draw.rect(tela, CINZA_ESCURO, rect_btn_aceitar_cookies, 0, 5)
         txt_b2 = fonte_pqi.render("ACEITAR TODOS", True, PRETO)
         tela.blit(txt_b2, (542, 368))
 
-    # --- PAINEL INFERIOR DE STATUS ---
     pygame.draw.rect(tela, CINZA_MEDIO, (0, 590, LARGURA, 60))
     
     if estado_jogo == "JOGANDO":
         placar = fonte_negrito.render(f"Ameaças Detectadas: {len(encontrados)} / 7", True, AZUL_SITE)
         tela.blit(placar, (40, 608))
 
-        # Lista discreta de acertos
         y_lista = 595
         x_lista = 760
         if encontrados:
@@ -257,16 +250,16 @@ while True:
             tela.blit(txt_item, (x_lista, y_lista))
             y_lista += 11
 
-    # --- TELAS DE FIM DE JOGO OVERLAYS ---
+
     elif estado_jogo == "GAME_OVER":
-        # Escurece levemente o fundo do painel inferior
+
         pygame.draw.rect(tela, (50, 0, 0), (0, 590, LARGURA, 60))
         msg_perdeu = fonte_negrito.render("FALHA DE SEGURANÇA! " + motivo_derrota, True, BRANCO)
         msg_restart = fonte_pqi.render("Pressione [R] para tentar novamente", True, AMARELO_ALERTA)
         tela.blit(msg_perdeu, (40, 600))
         tela.blit(msg_restart, (40, 625))
 
-    elif estado_jogo == "VITORIA":
+    elif estado_jogo == "Parabéns por achar todos os erros!!!":
         pygame.draw.rect(tela, (0, 50, 0), (0, 590, LARGURA, 60))
         msg_vitoria = fonte_titulo.render("Excelente! O navegador está 100% limpo e seguro!", True, BRANCO)
         msg_restart = fonte_pqi.render("Pressione [R] para jogar novamente", True, AMARELO_ALERTA)
