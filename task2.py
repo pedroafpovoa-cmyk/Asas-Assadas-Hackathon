@@ -268,3 +268,5 @@ while True:
 
     pygame.display.flip()
     relogio.tick(60)
+    
+    #py -3.12 task2.py
