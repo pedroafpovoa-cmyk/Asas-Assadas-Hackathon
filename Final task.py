@@ -9,13 +9,13 @@ LARGURA = 900
 ALTURA = 600
 
 tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Mini Game - Criador de Senhas")
+pygame.display.set_caption("Mini Game - Criador de Senhas (BLOQUEADO)")
 
 fonte = pygame.font.SysFont(None, 36)
 fonte_pequena = pygame.font.SysFont(None, 28)
 
 caixa = pygame.Rect(100, 100, 700, 50)
-botao = pygame.Rect(350, 180, 200, 50)  # Ajustado levemente a posição para dar espaço aos blocos
+botao = pygame.Rect(350, 180, 200, 50)
 
 # Retângulos para os blocos de dicas no canto inferior direito
 bloquinho_ave = pygame.Rect(550, 310, 280, 95)   # Novo bloco (em cima)
@@ -34,14 +34,12 @@ mostrar_cursor = True
 mensagem = ""
 cor_mensagem = (255, 255, 255)
 
-# Variáveis para controlar o fechamento automático após vencer
+# Variável para controlar a validação
 concluido = False
-tempo_conclusao = 0
 
 # Função auxiliar para remover acentos e deixar em minúsculo
 def normalizar_texto(texto):
     texto_minusculo = texto.strip().lower()
-    # Remove acentos usando decomposição unicode
     processado = unicodedata.normalize('NFKD', texto_minusculo)
     return "".join([c for c in processado if not unicodedata.combining(c)])
 
@@ -52,7 +50,6 @@ def carregar_lista(arquivo):
             for linha in f:
                 linha = linha.strip()
                 if linha != "":
-                    # Guarda o texto normalizado (sem acento e minúsculo) para a checagem rápida
                     lista.append(normalizar_texto(linha))
     except FileNotFoundError:
         print(f"Aviso: Arquivo {arquivo} não encontrado.")
@@ -66,7 +63,6 @@ def carregar_capitais(arquivo):
                 linha = linha.strip()
                 if linha and ":" in linha and not linha.startswith("["):
                     capital, pais = linha.split(":", 1)
-                    # A chave do dicionário será a capital SEM acento para facilitar a busca genérica
                     dicionario_capitais[normalizar_texto(capital)] = pais.strip()
     except FileNotFoundError:
         print(f"Aviso: Arquivo {arquivo} não encontrado.")
@@ -92,7 +88,6 @@ def sortear_dica_capital():
 def sortear_dica_ave():
     global ave_dica
     if aves:
-        # Sorteia uma ave da lista (ela está guardada normalizada, mas serve como string de dica)
         ave_dica = random.choice(aves).capitalize()
     else:
         ave_dica = "Arquivo não encontrado"
@@ -111,16 +106,13 @@ def verificar_especiais(texto):
             quantidade += 1
     return quantidade >= 5
 
-# AGORA ACEITA QUALQUER CAPITAL DO ARQUIVO (E IGNORA ACENTOS)
 def verificar_capital(texto):
     texto_usuario = normalizar_texto(texto)
-    # Procura se alguma das chaves (capitais sem acento) está contida no texto do usuário
     for capital in capitais_dict.keys():
         if capital in texto_usuario:
             return True
     return False
 
-# VERIFICA SE QUALQUER AVE ESTÁ NA SENHA (E IGNORA ACENTOS)
 def verificar_ave(texto):
     texto_usuario = normalizar_texto(texto)
     for ave in aves:
@@ -155,19 +147,17 @@ rodando = True
 while rodando:
     dt = clock.tick(60)
 
-    # Lógica do temporizador de fechamento após vencer
-    if concluido:
-        if pygame.time.get_ticks() - tempo_conclusao >= 3000:
-            rodando = False
-
     tempo_cursor += dt
     if tempo_cursor >= 500:
         mostrar_cursor = not mostrar_cursor
         tempo_cursor = 0
 
     for evento in pygame.event.get():
+        # === O JOGO NÃO FECHA MAIS PELO 'X' OU ALT+F4 ===
         if evento.type == pygame.QUIT:
-            rodando = False
+            mensagem = "VOCÊ NÃO PODE FECHAR O JOGO! COLOQUE A SENHA."
+            cor_mensagem = (255, 0, 0)
+            continue # Ignora o fechamento e continua o loop
 
         if evento.type == pygame.MOUSEBUTTONDOWN:
             if caixa.collidepoint(evento.pos):
@@ -176,12 +166,10 @@ while rodando:
             else:
                 ativa = False
 
-            # Clique no bloco de dicas de capitais
             if bloquinho_dica.collidepoint(evento.pos):
                 sortear_dica_capital()
                 mensagem = ""
 
-            # Clique no bloco de dicas de aves
             if bloquinho_ave.collidepoint(evento.pos):
                 sortear_dica_ave()
                 mensagem = ""
@@ -189,25 +177,27 @@ while rodando:
             if botao.collidepoint(evento.pos):
                 erros = verificar_senha(senha)
                 if len(erros) == 0:
-                    mensagem = "SENHA VÁLIDA!"
+                    mensagem = "SENHA VÁLIDA E SALVA!"
                     cor_mensagem = (0, 255, 0)
-                    # Registra o momento da vitória se ainda não foi registrado
-                    if not concluido:
-                        concluido = True
-                        tempo_conclusao = pygame.time.get_ticks()
-                        
-                        # === SALVA APENAS E EXCLUSIVAMENTE A SENHA ATUAL ===
-                        try:
-                            with open("senha_salva.txt", "w", encoding="utf-8") as f:
-                                f.write(senha.strip())
-                        except Exception as e:
-                            print(f"Erro ao salvar a senha: {e}")
+                    concluido = True
+                    
+                    try:
+                        with open("senha_salva.txt", "w", encoding="utf-8") as f:
+                            f.write(senha.strip())
+                    except Exception as e:
+                        print(f"Erro ao salvar: {e}")
                 else:
                     mensagem = erros[0]
                     cor_mensagem = (255, 80, 80)
-                    concluido = False # Cancela o encerramento caso ele altere a senha para uma inválida
+                    concluido = False
 
         if evento.type == pygame.KEYDOWN and ativa:
+            # Bloqueia a tecla ESCAPE de desativar ou fechar coisas críticas
+            if evento.key == pygame.K_ESCAPE:
+                mensagem = "Tentou fugir pelo ESC? Sem chances."
+                cor_mensagem = (255, 80, 80)
+                continue
+
             if evento.key == pygame.K_BACKSPACE:
                 if indice_cursor > 0:
                     senha = senha[: indice_cursor - 1] + senha[indice_cursor:]
@@ -233,7 +223,7 @@ while rodando:
                     mostrar_cursor = True
                     tempo_cursor = 0
 
-            elif evento.key not in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB, pygame.K_ESCAPE):
+            elif evento.key not in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
                 if evento.unicode and evento.unicode.isprintable():
                     if len(senha) < 40:
                         senha = (
@@ -263,13 +253,7 @@ while rodando:
 
     if ativa and mostrar_cursor:
         x_cursor = caixa.x + 10 + largura_antes
-        pygame.draw.line(
-            tela,
-            (0, 0, 0),
-            (x_cursor, caixa.y + 10),
-            (x_cursor, caixa.y + 40),
-            2,
-        )
+        pygame.draw.line(tela, (0, 0, 0), (x_cursor, caixa.y + 10), (x_cursor, caixa.y + 40), 2)
 
     pygame.draw.rect(tela, (50, 180, 80), botao)
     texto_botao = fonte.render("VERIFICAR", True, (255, 255, 255))
@@ -293,7 +277,7 @@ while rodando:
     pygame.draw.rect(tela, (45, 90, 135), bloquinho_ave)
     pygame.draw.rect(tela, (255, 255, 255), bloquinho_ave, 2)
 
-    texto_ave_titulo = fonte_pequena.render("Exemplo de ave:", True, (0, 255, 255))  # Cor Ciano
+    texto_ave_titulo = fonte_pequena.render("Exemplo de ave:", True, (0, 255, 255))
     texto_ave_conteudo = fonte_pequena.render(f"Ave: {ave_dica}", True, (255, 255, 255))
     texto_ave_clique = fonte_pequena.render("(Clique para mudar)", True, (180, 200, 220))
 
