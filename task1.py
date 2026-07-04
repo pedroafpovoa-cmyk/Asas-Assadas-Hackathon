@@ -1,7 +1,7 @@
 import pygame
 import string
 import random
-import unicodedata  # Importado para remover acentos na comparação
+import unicodedata
 
 pygame.init()
 
