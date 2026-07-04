@@ -52,6 +52,7 @@ nomes_erros = {
     5: "Botão Download Malicioso",
     6: "Identificou o Painel de Login Falso"
 }
+}
 
 # --- ÁREAS CLICÁVEIS DOS 7 ERROS ---
 erros = [
@@ -95,9 +96,14 @@ while True:
                 # Interações com o Pop-up de Cookies aberto
                 if cookies_visivel:
                     if rect_btn_evitar_cookies.collidepoint(pos):
+                        # Ação segura: fecha o pop-up e permite continuar jogando
                         cookies_visivel = False
                         cookies_clicado = True
                     elif rect_btn_aceitar_cookies.collidepoint(pos):
+                        # Ação insegura: aceitou rastreamento -> Game Over
+                        estado_jogo = "GAME_OVER"
+                        motivo_derrota = "Você aceitou cookies de terceiros! Seus dados de navegação foram expostos."
+                    continue 
                         estado_jogo = "GAME_OVER"
                         motivo_derrota = "Você aceitou cookies de terceiros! Seus dados de navegação foram expostos."
                     continue 
@@ -142,10 +148,6 @@ while True:
     tela.blit(txt_check, (153, 43))
     
     # URL
-    txt_url = fonte_pqi.render("https://www.g00gle-security-update.com/login", True, (100, 100, 100))
-    tela.blit(txt_url, (175, 43))
-
-    # --- CONTEÚDO DO SITE ---
     pygame.draw.rect(tela, BRANCO, (40, 70, 920, 500))
     pygame.draw.rect(tela, CINZA_MEDIO, (40, 70, 920, 500), 2)
     
@@ -214,6 +216,7 @@ while True:
     txt_btn_entrar = fonte_pqi.render("ENTRAR", True, BRANCO)
     tela.blit(txt_btn_entrar, (850, 516))
 
+# --- POP-UP DE COOKIES CORRIGIDO ---
     if cookies_visivel:
         pygame.draw.rect(tela, BRANCO, rect_cookies, 0, 10)
         pygame.draw.rect(tela, PRETO, rect_cookies, 3, 10)
@@ -225,13 +228,15 @@ while True:
         tela.blit(txt_c2, (315, 305))
         tela.blit(txt_c3, (315, 325))
 
+        # Botão Evitar (Vermelho - Seguro)
         pygame.draw.rect(tela, VERMELHO_ALERTA, rect_btn_evitar_cookies, 0, 5)
-        txt_b1 = fonte_pqi.render("ACEITAR TODOS", True, BRANCO)
-        tela.blit(txt_b1, (362, 368))
+        txt_b1 = fonte_pqi.render("EVITAR COOKIES", True, BRANCO)
+        tela.blit(txt_b1, (365, 368))
 
+        # Botão Aceitar (Verde - Perigoso)
         pygame.draw.rect(tela, VERDE_SUCESSO, rect_btn_aceitar_cookies, 0, 5)
-        txt_b2 = fonte_pqi.render("EVITAR COOKIES", True, BRANCO)
-        tela.blit(txt_b2, (542, 368))
+        txt_b2 = fonte_pqi.render("ACEITAR TODOS", True, BRANCO)
+        tela.blit(txt_b2, (538, 368))
 
     pygame.draw.rect(tela, CINZA_MEDIO, (0, 590, LARGURA, 60))
     
@@ -250,16 +255,14 @@ while True:
             tela.blit(txt_item, (x_lista, y_lista))
             y_lista += 11
 
-
     elif estado_jogo == "GAME_OVER":
-
         pygame.draw.rect(tela, (50, 0, 0), (0, 590, LARGURA, 60))
         msg_perdeu = fonte_negrito.render("FALHA DE SEGURANÇA! " + motivo_derrota, True, BRANCO)
         msg_restart = fonte_pqi.render("Pressione [R] para tentar novamente", True, AMARELO_ALERTA)
         tela.blit(msg_perdeu, (40, 600))
         tela.blit(msg_restart, (40, 625))
 
-    elif estado_jogo == "Parabéns por achar todos os erros!!!":
+    elif estado_jogo == "VITORIA":
         pygame.draw.rect(tela, (0, 50, 0), (0, 590, LARGURA, 60))
         msg_vitoria = fonte_titulo.render("Excelente! O navegador está 100% limpo e seguro!", True, BRANCO)
         msg_restart = fonte_pqi.render("Pressione [R] para jogar novamente", True, AMARELO_ALERTA)
@@ -268,5 +271,4 @@ while True:
 
     pygame.display.flip()
     relogio.tick(60)
-    
     #py -3.12 task3.py
