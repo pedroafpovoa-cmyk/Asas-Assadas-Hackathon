@@ -4,8 +4,8 @@ import random  # Importado para sortear a dica aleatória
 
 pygame.init()
 
-LARGURA = 900
-ALTURA = 600
+LARGURA = 960
+ALTURA = 540
 
 tela = pygame.display.set_mode((LARGURA, ALTURA))
 pygame.display.set_caption("Mini Game - Criador de Senhas")
