@@ -17,10 +17,6 @@ fonte_pequena = pygame.font.SysFont(None, 28)
 caixa = pygame.Rect(100, 100, 700, 50)
 botao = pygame.Rect(350, 180, 200, 50)
 
-# Retângulos para os blocos de dicas no canto inferior direito
-bloquinho_ave = pygame.Rect(550, 310, 280, 95)   # Novo bloco (em cima)
-bloquinho_dica = pygame.Rect(550, 420, 280, 100) # Bloco de capitais (em baixo)
-
 cor_inativa = (220, 220, 220)
 cor_ativa = (255, 255, 255)
 
@@ -34,8 +30,9 @@ mostrar_cursor = True
 mensagem = ""
 cor_mensagem = (255, 255, 255)
 
-# Variável para controlar a validação
+# Variáveis para controlar a validação e o fechamento automático
 concluido = False
+tempo_fechamento = 0  # Guardará o tempo restante para fechar (em milissegundos)
 
 # Função auxiliar para remover acentos e deixar em minúsculo
 def normalizar_texto(texto):
@@ -62,39 +59,15 @@ def carregar_capitais(arquivo):
             for linha in f:
                 linha = linha.strip()
                 if linha and ":" in linha and not linha.startswith("["):
-                    capital, pais = linha.split(":", 1)
+                    capital, pais = linha.split(":", 1)  # Corrigido aqui!
                     dicionario_capitais[normalizar_texto(capital)] = pais.strip()
     except FileNotFoundError:
         print(f"Aviso: Arquivo {arquivo} não encontrado.")
     return dicionario_capitais
 
-# Carrega as estruturas de dados
+# Carrega as estruturas de dados para validação interna
 capitais_dict = carregar_capitais("capitais.txt")
 aves = carregar_lista("aves.txt")
-
-# Variáveis para as dicas visuais
-capital_secreta = ""
-pais_dica = ""
-ave_dica = ""
-
-def sortear_dica_capital():
-    global capital_secreta, pais_dica
-    if capitais_dict:
-        capital_normalizada, pais = random.choice(list(capitais_dict.items()))
-        pais_dica = pais
-    else:
-        pais_dica = "Arquivo não encontrado"
-
-def sortear_dica_ave():
-    global ave_dica
-    if aves:
-        ave_dica = random.choice(aves).capitalize()
-    else:
-        ave_dica = "Arquivo não encontrado"
-
-# Sorteia as primeiras dicas do jogo
-sortear_dica_capital()
-sortear_dica_ave()
 
 def verificar_tamanho(texto):
     return 6 <= len(texto) <= 40
@@ -147,17 +120,27 @@ rodando = True
 while rodando:
     dt = clock.tick(60)
 
+    # Lógica do cursor piscando
     tempo_cursor += dt
     if tempo_cursor >= 500:
         mostrar_cursor = not mostrar_cursor
         tempo_cursor = 0
 
+    # Lógica do temporizador para fechar o jogo
+    if concluido:
+        tempo_fechamento -= dt
+        if tempo_fechamento <= 0:
+            rodando = False  # Fecha o jogo após os 3 segundos
+
     for evento in pygame.event.get():
-        # === O JOGO NÃO FECHA MAIS PELO 'X' OU ALT+F4 ===
+        # === O JOGO NÃO FECHA MAIS PELO 'X' OU ALT+F4 SE NÃO ESTIVER CONCLUÍDO ===
         if evento.type == pygame.QUIT:
-            mensagem = "VOCÊ NÃO PODE FECHAR O JOGO! COLOQUE A SENHA."
-            cor_mensagem = (255, 0, 0)
-            continue # Ignora o fechamento e continua o loop
+            if concluido:
+                rodando = False
+            else:
+                mensagem = "VOCÊ NÃO PODE FECHAR O JOGO! COLOQUE A SENHA."
+                cor_mensagem = (255, 0, 0)
+            continue
 
         if evento.type == pygame.MOUSEBUTTONDOWN:
             if caixa.collidepoint(evento.pos):
@@ -166,20 +149,13 @@ while rodando:
             else:
                 ativa = False
 
-            if bloquinho_dica.collidepoint(evento.pos):
-                sortear_dica_capital()
-                mensagem = ""
-
-            if bloquinho_ave.collidepoint(evento.pos):
-                sortear_dica_ave()
-                mensagem = ""
-
-            if botao.collidepoint(evento.pos):
+            if botao.collidepoint(evento.pos) and not concluido:
                 erros = verificar_senha(senha)
                 if len(erros) == 0:
-                    mensagem = "SENHA VÁLIDA E SALVA!"
+                    mensagem = "SENHA VÁLIDA E SALVA! O jogo fechará em 3 segundos..."
                     cor_mensagem = (0, 255, 0)
                     concluido = True
+                    tempo_fechamento = 3000  # 3000 milissegundos = 3 segundos
                     
                     try:
                         with open("senha_salva.txt", "w", encoding="utf-8") as f:
@@ -191,8 +167,7 @@ while rodando:
                     cor_mensagem = (255, 80, 80)
                     concluido = False
 
-        if evento.type == pygame.KEYDOWN and ativa:
-            # Bloqueia a tecla ESCAPE de desativar ou fechar coisas críticas
+        if evento.type == pygame.KEYDOWN and ativa and not concluido:
             if evento.key == pygame.K_ESCAPE:
                 mensagem = "Tentou fugir pelo ESC? Sem chances."
                 cor_mensagem = (255, 80, 80)
@@ -235,9 +210,11 @@ while rodando:
                         mostrar_cursor = True
                         tempo_cursor = 0
                         
+    # --- DESENHO NA TELA ---
     tela.fill((120, 60, 90))
 
-    titulo = fonte.render("          CRIADOR DE SENHAS", True, (255, 255, 255))
+    # Título alterado para SENHA INICIAL
+    titulo = fonte.render("              SENHA INICIAL", True, (255, 255, 255))
     tela.blit(titulo, (250, 30))
 
     cor = cor_ativa if ativa else cor_inativa
@@ -251,50 +228,17 @@ while rodando:
     texto_completo = fonte.render(senha, True, (0, 0, 0))
     tela.blit(texto_completo, (caixa.x + 10, caixa.y + 11))
 
-    if ativa and mostrar_cursor:
+    if ativa and mostrar_cursor and not concluido:
         x_cursor = caixa.x + 10 + largura_antes
         pygame.draw.line(tela, (0, 0, 0), (x_cursor, caixa.y + 10), (x_cursor, caixa.y + 40), 2)
 
     pygame.draw.rect(tela, (50, 180, 80), botao)
-    texto_botao = fonte.render("VERIFICAR", True, (255, 255, 255))
-    tela.blit(texto_botao, (botao.x + 25, botao.y + 10))
+    texto_botao = fonte.render(" VERIFICAR", True, (255, 255, 255))
+    tela.blit(texto_botao, (botao.x + 24, botao.y + 10))
 
-    regras = [
-        "Regras:",
-        "- Entre 6 e 40 caracteres",
-        "- Pelo menos 5 caracteres especiais",
-        "- Coloque uma capital da Europa Ocidental",
-        "- Uma ave que não voe",
-        "- Exatamente 7 números",
-    ]
-
-    y = 280
-    for linha in regras:
-        superficie = fonte_pequena.render(linha, True, (255, 255, 255))
-        tela.blit(superficie, (70, y))
-        y += 30
-
-    pygame.draw.rect(tela, (45, 90, 135), bloquinho_ave)
-    pygame.draw.rect(tela, (255, 255, 255), bloquinho_ave, 2)
-
-    texto_ave_titulo = fonte_pequena.render("Exemplo de ave:", True, (0, 255, 255))
-    texto_ave_conteudo = fonte_pequena.render(f"Ave: {ave_dica}", True, (255, 255, 255))
-    texto_ave_clique = fonte_pequena.render("(Clique para mudar)", True, (180, 200, 220))
-
-    tela.blit(texto_ave_titulo, (bloquinho_ave.x + 15, bloquinho_ave.y + 10))
-    tela.blit(texto_ave_conteudo, (bloquinho_ave.x + 15, bloquinho_ave.y + 37))
-    tela.blit(texto_ave_clique, (bloquinho_ave.x + 15, bloquinho_ave.y + 64))
-
-    pygame.draw.rect(tela, (45, 90, 135), bloquinho_dica)
-    pygame.draw.rect(tela, (255, 255, 255), bloquinho_dica, 2)
-
-    texto_dica_titulo = fonte_pequena.render("DICA DE CAPITAL:", True, (255, 215, 0))
-    texto_dica_conteudo = fonte_pequena.render(f"País: {pais_dica}", True, (255, 255, 255))
-    texto_dica_clique = fonte_pequena.render("(Clique para mudar)", True, (180, 200, 220))
-
-    tela.blit(texto_dica_titulo, (bloquinho_dica.x + 15, bloquinho_dica.y + 12))
-    tela.blit(texto_dica_conteudo, (bloquinho_dica.x + 15, bloquinho_dica.y + 42))
-    tela.blit(texto_dica_clique, (bloquinho_dica.x + 15, bloquinho_dica.y + 72))
+    # Nova exibição de texto substituindo a lista de regras antiga
+    texto_instrucao = fonte_pequena.render("Coloque sua senha inicial.", True, (255, 255, 255))
+    tela.blit(texto_instrucao, (70, 280))
 
     if mensagem != "":
         resultado = fonte_pequena.render(mensagem, True, cor_mensagem)
