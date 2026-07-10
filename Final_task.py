@@ -5,11 +5,11 @@ import unicodedata
 
 pygame.init()
 
-LARGURA = 900
+LARGURA = 800
 ALTURA = 600
 
 tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Mini Game - Criador de Senhas (BLOQUEADO)")
+pygame.display.set_caption("Coloque sua senha inicial")
 
 fonte = pygame.font.SysFont(None, 36)
 fonte_pequena = pygame.font.SysFont(None, 28)
@@ -152,7 +152,7 @@ while rodando:
             if botao.collidepoint(evento.pos) and not concluido:
                 erros = verificar_senha(senha)
                 if len(erros) == 0:
-                    mensagem = "SENHA VÁLIDA E SALVA! O jogo fechará em 3 segundos..."
+                    mensagem = "SENHA VÁLIDA!"
                     cor_mensagem = (0, 255, 0)
                     concluido = True
                     tempo_fechamento = 3000  # 3000 milissegundos = 3 segundos

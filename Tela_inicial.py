@@ -89,6 +89,7 @@ while True:
                     estado_jogo = "CONFIGURACOES"
                 elif botao_quit.collidepoint(pos_mouse):
                     pygame.quit()
+                    sys.exit()
 
     # --- RENDERIZAÇÃO E LÓGICA DE ESTADOS ---
     if estado_jogo == "MENU":

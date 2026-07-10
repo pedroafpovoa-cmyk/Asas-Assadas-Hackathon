@@ -2,31 +2,26 @@ import pygame
 import string
 import random
 import unicodedata
-import sys
 
-# === INICIALIZAÇÃO DO PYGAME ===
-pygame.init()
+# Inicialização de Fontes
 pygame.font.init()
+fonte = pygame.font.SysFont(None, 36)          # Usada para Título, Senha e Botão
+fonte_pequena = pygame.font.SysFont(None, 24)  # Usada para requisitos e dicas
 
-# Configuração da Janela (800x600 conforme solicitado)
-LARGURA_TELA = 800
-ALTURA_TELA = 600
-tela = pygame.display.set_mode((LARGURA_TELA, ALTURA_TELA))
-pygame.display.set_caption("Criador de Senhas")
-relogio = pygame.time.Clock()
+# --- GEOMETRIA ADAPTADA E CENTRALIZADA (Para 800x600) ---
 
-# Fontes
-fonte = pygame.font.SysFont(None, 36)          # Título, Senha, Botão e REGRAS
-fonte_pequena = pygame.font.SysFont(None, 24)  # Textos internos das dicas
+# Centro do eixo X é 400 (LARGURA // 2)
 
-# === GEOMETRIA DOS ELEMENTOS ===
-# 1. Barra de senha e Botão CENTRALIZADOS (Eixo X = 400)
-caixa = pygame.Rect(150, 90, 500, 45) 
-botao = pygame.Rect(300, 150, 200, 45)     
+# Caixa de senha (600px de largura): X = 400 - (600 // 2) = 100. Y = 90 (Logo abaixo do título)
+caixa = pygame.Rect(100, 90, 600, 50)       
 
-# 2. Blocos de dicas no CANTO INFERIOR DIREITO (Empilhados: Países em cima, Aves embaixo)
-bloquinho_dica = pygame.Rect(490, 370, 280, 90) # Bloco de Países (Cima)
-bloquinho_ave = pygame.Rect(490, 480, 280, 90)  # Bloco de Aves (Baixo)
+# Botão Verificar (200px de largura): X = 400 - (200 // 2) = 300. Y = 160 (Logo abaixo da caixa)
+botao = pygame.Rect(300, 160, 200, 50)     
+
+# Blocos de dicas empilhados no canto inferior direito
+# Alinhados em X = 480, Y começando em 270 para não embolar
+bloquinho_dica = pygame.Rect(480, 270, 280, 95) # Em cima: Capitais/Países
+bloquinho_ave = pygame.Rect(480, 385, 280, 95)  # Em baixo: Aves
 
 cor_inativa = (220, 220, 220)
 cor_ativa = (255, 255, 255)
@@ -44,7 +39,7 @@ cor_mensagem = (255, 255, 255)
 concluido = False
 tempo_conclusao = 0
 
-# === FUNÇÕES AUXILIARES DE DADOS ===
+# --- Funções Auxiliares de Dados ---
 def normalizar_texto(texto):
     texto_minusculo = texto.strip().lower()
     processado = unicodedata.normalize('NFKD', texto_minusculo)
@@ -59,9 +54,7 @@ def carregar_lista(arquivo):
                 if linha != "":
                     lista.append(normalizar_texto(linha))
     except FileNotFoundError:
-        # Fallback caso os arquivos não existam no teste inicial
-        if "ave" in arquivo:
-            return ["avestruz", "pinguim", "kiwi", "emas"]
+        print(f"Aviso: Arquivo {arquivo} não encontrado.")
     return lista
 
 def carregar_capitais(arquivo):
@@ -74,8 +67,7 @@ def carregar_capitais(arquivo):
                     capital, pais = linha.split(":", 1)
                     dicionario_capitais[normalizar_texto(capital)] = pais.strip()
     except FileNotFoundError:
-        # Fallback caso os arquivos não existam no teste inicial
-        return {"paris": "França", "londres": "Reino Unido", "madri": "Espanha", "roma": "Itália"}
+        print(f"Aviso: Arquivo {arquivo} não encontrado.")
     return dicionario_capitais
 
 # Carrega as listas de arquivos externos
@@ -92,54 +84,67 @@ def sortear_dica_capital():
         capital_normalizada, pais = random.choice(list(capitais_dict.items()))
         pais_dica = pais
     else:
-        pais_dica = "Sem dados"
+        pais_dica = "Arquivo não encontrado"
 
 def sortear_dica_ave():
     global ave_dica
     if aves:
         ave_dica = random.choice(aves).capitalize()
     else:
-        ave_dica = "Sem dados"
+        ave_dica = "Arquivo não encontrado"
 
 # Sorteios Iniciais
 sortear_dica_capital()
 sortear_dica_ave()
 
-# === VALIDADORES DA SENHA ===
+# --- Validadores da Senha ---
 def verificar_tamanho(texto):
     return 6 <= len(texto) <= 40
 
 def verificar_especiais(texto):
-    quantidade = sum(1 for caractere in texto if caractere in string.punctuation)
+    quantidade = 0
+    for caractere in texto:
+        if caractere in string.punctuation:
+            quantidade += 1
     return quantidade >= 5
 
 def verificar_capital(texto):
     texto_usuario = normalizar_texto(texto)
-    return any(capital in texto_usuario for capital in capitais_dict.keys())
+    for capital in capitais_dict.keys():
+        if capital in texto_usuario:
+            return True
+    return False
 
 def verificar_ave(texto):
     texto_usuario = normalizar_texto(texto)
-    return any(ave in texto_usuario for ave in aves)
+    for ave in aves:
+        if ave in texto_usuario:
+            return True
+    return False
 
 def verificar_numeros(texto):
-    quantidade = sum(1 for caractere in texto if caractere.isdigit())
+    quantidade = 0
+    for caractere in texto:
+        if caractere.isdigit():
+            quantidade += 1
     return quantidade == 7
 
 def verificar_senha(texto):
     erros = []
     if not verificar_tamanho(texto):
-        erros.append("Senha deve ter entre 6 e 40 caracteres.")
+        erros.append("Senha inválida: tamanho incorreto.")
     if not verificar_especiais(texto):
-        erros.append("Senha deve possuir ao menos 5 especiais.")
+        erros.append("Senha precisa de 5 caracteres especiais.")
     if not verificar_capital(texto):
         erros.append("A senha não contém nenhuma capital válida!")
     if not verificar_ave(texto):
-        erros.append("Inclua uma ave que não voe válida.")
+        erros.append("Inclua uma ave que não voa válida.")
     if not verificar_numeros(texto):
         erros.append("A senha deve conter exatamente 7 números.")
     return erros
 
-# === FUNÇÃO GERENCIADORA DA TASK ===
+
+# --- FUNÇÃO GERENCIADORA ---
 def gerenciar_task1(tela, lista_eventos, LARGURA, ALTURA):
     global ativa, senha, indice_cursor, tempo_cursor, mostrar_cursor, mensagem, cor_mensagem, concluido, tempo_conclusao
 
@@ -242,45 +247,55 @@ def gerenciar_task1(tela, lista_eventos, LARGURA, ALTURA):
     titulo = fonte.render("CRIADOR DE SENHAS", True, (255, 255, 255))
     tela.blit(titulo, (LARGURA // 2 - titulo.get_width() // 2, 30))
 
-    # Caixa de senha
+    # Caixa de senha centralizada abaixo do título
     cor = cor_ativa if ativa else cor_inativa
     pygame.draw.rect(tela, cor, caixa)
     pygame.draw.rect(tela, (0, 0, 0), caixa, 2)
 
-    # Texto interno
+    # Texto interno da senha
     texto_antes_cursor = senha[:indice_cursor]
     superficie_antes = fonte.render(texto_antes_cursor, True, (0, 0, 0))
     largura_antes = superficie_antes.get_width()
 
     texto_completo = fonte.render(senha, True, (0, 0, 0))
-    tela.blit(texto_completo, (caixa.x + 10, caixa.y + 8))
+    tela.blit(texto_completo, (caixa.x + 10, caixa.y + 11))
 
     if ativa and mostrar_cursor:
         x_cursor = caixa.x + 10 + largura_antes
-        pygame.draw.line(tela, (0, 0, 0), (x_cursor, caixa.y + 8), (x_cursor, caixa.y + 37), 2)
+        pygame.draw.line(tela, (0, 0, 0), (x_cursor, caixa.y + 10), (x_cursor, caixa.y + 40), 2)
 
-    # Botão VERIFICAR
+    # Botão VERIFICAR alinhado centralizado abaixo da caixa de texto
     pygame.draw.rect(tela, (50, 180, 80), botao)
     texto_botao = fonte.render("VERIFICAR", True, (255, 255, 255))
-    tela.blit(texto_botao, (botao.x + (botao.width // 2 - texto_botao.get_width() // 2), botao.y + 8))
+    tela.blit(texto_botao, (botao.x + (botao.width // 2 - texto_botao.get_width() // 2), botao.y + 11))
 
-    # Requisitos à ESQUERDA
+    # --- REQUISITOS NO CANTO ESQUERDO DA TELA ---
     regras = [
         "Requisitos da Senha:",
         "- Entre 6 e 40 caracteres",
         "- Pelo menos 5 especiais",
-        "- Uma capital da Europa Ocidental.",
-        "- Uma ave que não voe",
+        "- Uma capital da Europa Ocidental",
+        "- Uma ave que não voa",
         "- Exatamente 7 números",
     ]
 
-    y_regras = 260
+    # Renderiza organizadamente na esquerda (X = 50), começando abaixo do botão (Y = 270)
+    y = 270
     for linha in regras:
-        superficie = fonte.render(linha, True, (255, 255, 255))
-        tela.blit(superficie, (40, y_regras))
-        y_regras += 35
+        # Destaca o título da lista usando a fonte normal, o restante usa a pequena
+        if linha == "Requisitos da Senha:":
+            superficie = fonte.render(linha, True, (255, 255, 255))
+            y_spacing = 35
+        else:
+            superficie = fonte_pequena.render(linha, True, (240, 240, 240))
+            y_spacing = 30
+            
+        tela.blit(superficie, (50, y))
+        y += y_spacing
 
-    # Bloco Dica 1: Capitais (CIMA - Canto Inferior Direito)
+    # --- BLOCOS DE DICAS EMPILHADOS (CANTO DIREITO) ---
+    
+    # Bloco de Cima: Capitais
     pygame.draw.rect(tela, (45, 90, 135), bloquinho_dica)
     pygame.draw.rect(tela, (255, 255, 255), bloquinho_dica, 2)
 
@@ -289,10 +304,10 @@ def gerenciar_task1(tela, lista_eventos, LARGURA, ALTURA):
     texto_dica_clique = fonte_pequena.render("(Clique para mudar)", True, (180, 200, 220))
 
     tela.blit(texto_dica_titulo, (bloquinho_dica.x + 15, bloquinho_dica.y + 10))
-    tela.blit(texto_dica_conteudo, (bloquinho_dica.x + 15, bloquinho_dica.y + 35))
-    tela.blit(texto_dica_clique, (bloquinho_dica.x + 15, bloquinho_dica.y + 60))
+    tela.blit(texto_dica_conteudo, (bloquinho_dica.x + 15, bloquinho_dica.y + 37))
+    tela.blit(texto_dica_clique, (bloquinho_dica.x + 15, bloquinho_dica.y + 64))
 
-# Bloco Dica 2: Aves (BAIXO - Canto Inferior Direito)
+    # Bloco de Baixo: Aves
     pygame.draw.rect(tela, (45, 90, 135), bloquinho_ave)
     pygame.draw.rect(tela, (255, 255, 255), bloquinho_ave, 2)
 
@@ -301,34 +316,12 @@ def gerenciar_task1(tela, lista_eventos, LARGURA, ALTURA):
     texto_ave_clique = fonte_pequena.render("(Clique para mudar)", True, (180, 200, 220))
 
     tela.blit(texto_ave_titulo, (bloquinho_ave.x + 15, bloquinho_ave.y + 10))
-    tela.blit(texto_ave_conteudo, (bloquinho_ave.x + 15, bloquinho_ave.y + 35))
-    tela.blit(texto_ave_clique, (bloquinho_ave.x + 15, bloquinho_ave.y + 60))
+    tela.blit(texto_ave_conteudo, (bloquinho_ave.x + 15, bloquinho_ave.y + 37))
+    tela.blit(texto_ave_clique, (bloquinho_ave.x + 15, bloquinho_ave.y + 64))
 
-# Mensagem de Feedback
+    # Mensagem de Feedback dinâmica (Centralizada entre o botão e os blocos inferiores)
     if mensagem != "":
-        resultado = fonte.render(mensagem, True, cor_mensagem)
-        tela.blit(resultado, (LARGURA // 2 - resultado.get_width() // 2, 220))
+        resultado = fonte_pequena.render(mensagem, True, cor_mensagem)
+        tela.blit(resultado, (LARGURA // 2 - resultado.get_width() // 2, 230))
 
     return "JOGANDO"
-
-# Loop principal da task
-rodando = True
-estado_atual = "JOGANDO"
-
-while rodando:
-    eventos = pygame.event.get()
-    for evento in eventos:
-        if evento.type == pygame.QUIT:
-            rodando = False
-
-# Executa a tarefa passando a tela, os eventos capturados e o tamanho da tela atual
-    if estado_atual == "JOGANDO":
-        retorno = gerenciar_task1(tela, eventos, LARGURA_TELA, ALTURA_TELA)
-        if retorno == "MENU":
-            print("Retornando ao Menu... (Ação simulada)")
-            # Aqui você pode mudar o estado_atual para "MENU" se tiver outra tela criada.
-            # Para manter o loop ativo no teste, continuaremos em JOGANDO:
-            estado_atual = "JOGANDO" 
-
-    pygame.display.flip()
-    relogio.tick(60) 
