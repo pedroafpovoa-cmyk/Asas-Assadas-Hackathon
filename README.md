@@ -4,7 +4,7 @@ Bem-vindo ao HackTasks! Para começar sua jornada de cibersegurança e enfrentar
 Para rodar o jogo, é necessário baixar a pasta completa do projeto, pois ele depende de arquivos externos (imagens e textos) para funcionar corretamente.
 
 Clique no link abaixo para acessar a pasta do jogo no Google Drive:
-👉 https://drive.google.com/drive/folders/148gEOPxjrqhOBcoU-q36nYDB2rWpNV44?usp=sharing
+👉 https://drive.google.com/drive/folders/148gEOPxjrqhOBcoU-q36nYDB2rWpNV44?usp=drive_link
 
 Clique no botão de Download (ícone de seta para baixo) para baixar o arquivo compactado (.zip).
 
