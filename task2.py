@@ -26,7 +26,7 @@ class GerenciadorPopups:
         self.altura = altura
         self.popups = []
         self.ultimo_popup = pygame.time.get_ticks()
-        self.tempo_proximo_popup = random.randint(45000, 60000)
+        self.tempo_proximo_popup = random.randint(15000, 20000)
         self.game_over = False
 
         # Fontes

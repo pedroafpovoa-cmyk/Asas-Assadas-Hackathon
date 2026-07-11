@@ -1,7 +1,10 @@
 import pygame
 import sys
 import configuracoes  
-import task1  # Importa o seu minijogo
+import task1  # Importa o minijogo
+import task2  # Importa o gerenciador de popups
+import task3  # <-- Importa a task3
+import Final_task
 
 # Inicialização Básica
 pygame.init()
@@ -19,8 +22,6 @@ except pygame.error:
     imagem_fundo.fill((30, 30, 40))
 
 # --- DIMENSÕES DOS BOTÕES REFORMULADAS ---
-# PLAY e QUIT ficaram mais largos e altos (300x65)
-# SETTINGS agora é um retângulo horizontal (120x50) posicionado no topo direito
 botao_settings = pygame.Rect(LARGURA - 120 - 20, 20, 120, 50)
 botao_play = pygame.Rect(LARGURA // 2 - 150, ALTURA - 180, 300, 65)
 botao_quit = pygame.Rect(LARGURA // 2 - 150, ALTURA - 95, 300, 65)
@@ -56,7 +57,6 @@ COR_GEAR = (100, 110, 120)
 COR_GEAR_HOVER = (140, 150, 160)
 
 fonte_titulo = pygame.font.SysFont("Arial", 64, bold=True)
-# Aumentei um pouco a fonte do menu para acompanhar os botões maiores
 fonte_menu = pygame.font.SysFont("Arial", 32, bold=True)
 fonte_engrenagem = pygame.font.SysFont("Arial", 32, bold=True)
 
@@ -68,16 +68,35 @@ def desenhar_texto(texto, fonte, cor, x, y):
     retangulo_texto = superficie_texto.get_rect(center=(x, y))
     tela.blit(superficie_texto, retangulo_texto)
 
+# --- NOVO: Inicializa o gerenciador de pop-ups ---
+gerenciador_popups = task2.GerenciadorPopups(LARGURA, ALTURA)
+
 # Loop Principal
 while True:
     pos_mouse = pygame.mouse.get_pos()
     evento_clique = None 
     lista_eventos = pygame.event.get()
     
+    # Criamos uma lista de eventos filtrados para não mandar cliques dos popups para o jogo
+    eventos_filtrados = [] 
+    
     for evento in lista_eventos:
         if evento.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+            
+        # --- NOVO: Processa eventos nos pop-ups PRIMEIRO ---
+        retorno_popup = gerenciador_popups.processar_evento(evento)
+        if retorno_popup == "FECHAR_JOGO":
+            pygame.quit()
+            sys.exit()
+            
+        if retorno_popup is True:
+            # Se o pop-up consumiu o evento (clicou nele), a gente pula o resto para não clicar no jogo atrás!
+            continue
+        
+        # Se o pop-up não consumiu, adicionamos na lista do jogo normal
+        eventos_filtrados.append(evento)
             
         if evento.type == pygame.MOUSEBUTTONDOWN and evento.button == 1:
             evento_clique = evento 
@@ -120,17 +139,37 @@ while True:
             pygame.draw.rect(tela, cor_atual_settings, botao_settings, border_radius=8)
             desenhar_texto("SETTINGS ⚙", fonte_engrenagem, COR_TEXTO, botao_settings.centerx, botao_settings.centery)
 
-    elif estado_jogo == "JOGANDO":
+    elif estado_jogo == "JOGANDO": # <-- ESTA É A TASK 1
         if primeiro_frame_jogo:
-            eventos_finais = [e for e in lista_eventos if e.type != pygame.MOUSEBUTTONDOWN]
+            eventos_finais = [e for e in eventos_filtrados if e.type != pygame.MOUSEBUTTONDOWN]
             primeiro_frame_jogo = False  
         else:
-            eventos_finais = lista_eventos  
+            # Mandamos os eventos filtrados para a task, assim ela não processa clique de popup
+            eventos_finais = eventos_filtrados  
         
-        estado_jogo = task1.gerenciar_task1(tela, eventos_finais, LARGURA, ALTURA)
+        # Recebemos o resultado da Task 1
+        resultado_task1 = task1.gerenciar_task1(tela, eventos_finais, LARGURA, ALTURA)
+        
+        # --- AQUI ACONTECE A MÁGICA DA TRANSIÇÃO ---
+        if resultado_task1 == "TASK3":
+            estado_jogo = "TASK3"
+        elif resultado_task1 != "JOGANDO":
+            estado_jogo = resultado_task1
+
+    # --- NOVO: ROTA DA TASK 3 ---
+    elif estado_jogo == "TASK3":
+        estado_jogo = task3.gerenciar_task3(tela, eventos_filtrados, LARGURA, ALTURA)
+
+    # --- NOVO: ROTA DE ESPERA PARA A FINAL TASK ---
+    elif estado_jogo == "FINAL_TASK":
+     estado_jogo = Final_task.gerenciar_final_task(tela, eventos_filtrados, LARGURA, ALTURA)
 
     elif estado_jogo == "CONFIGURACOES":
         estado_jogo = configuracoes.gerenciar_configuracoes(tela, evento_clique, pos_mouse, LARGURA, ALTURA)
+
+    # --- NOVO: ATUALIZA E DESENHA OS POP-UPS POR ÚLTIMO (POR CIMA DE TUDO) ---
+    gerenciador_popups.atualizar()
+    gerenciador_popups.desenhar(tela)
 
     pygame.display.flip()
     relogio.tick(60)

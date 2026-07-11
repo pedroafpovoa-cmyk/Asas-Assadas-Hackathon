@@ -3,38 +3,7 @@ import string
 import random
 import unicodedata
 
-pygame.init()
-
-LARGURA = 800
-ALTURA = 600
-
-tela = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Coloque sua senha inicial")
-
-fonte = pygame.font.SysFont(None, 36)
-fonte_pequena = pygame.font.SysFont(None, 28)
-
-caixa = pygame.Rect(100, 100, 700, 50)
-botao = pygame.Rect(350, 180, 200, 50)
-
-cor_inativa = (220, 220, 220)
-cor_ativa = (255, 255, 255)
-
-ativa = False
-senha = ""
-indice_cursor = 0
-
-tempo_cursor = 0
-mostrar_cursor = True
-
-mensagem = ""
-cor_mensagem = (255, 255, 255)
-
-# Variáveis para controlar a validação e o fechamento automático
-concluido = False
-tempo_fechamento = 0  # Guardará o tempo restante para fechar (em milissegundos)
-
-# Função auxiliar para remover acentos e deixar em minúsculo
+# --- FUNÇÕES DE VALIDAÇÃO E DADOS ---
 def normalizar_texto(texto):
     texto_minusculo = texto.strip().lower()
     processado = unicodedata.normalize('NFKD', texto_minusculo)
@@ -59,13 +28,12 @@ def carregar_capitais(arquivo):
             for linha in f:
                 linha = linha.strip()
                 if linha and ":" in linha and not linha.startswith("["):
-                    capital, pais = linha.split(":", 1)  # Corrigido aqui!
+                    capital, pais = linha.split(":", 1)
                     dicionario_capitais[normalizar_texto(capital)] = pais.strip()
     except FileNotFoundError:
         print(f"Aviso: Arquivo {arquivo} não encontrado.")
     return dicionario_capitais
 
-# Carrega as estruturas de dados para validação interna
 capitais_dict = carregar_capitais("capitais.txt")
 aves = carregar_lista("aves.txt")
 
@@ -114,34 +82,58 @@ def verificar_senha(texto):
         erros.append("A senha deve conter exatamente 7 números.")
     return erros
 
-clock = pygame.time.Clock()
-rodando = True
+# --- VARIÁVEIS GLOBAIS DE ESTADO ---
+caixa = pygame.Rect(100, 100, 700, 50)
+botao = pygame.Rect(350, 180, 200, 50)
 
-while rodando:
-    dt = clock.tick(60)
+cor_inativa = (220, 220, 220)
+cor_ativa = (255, 255, 255)
+
+ativa = False
+senha = ""
+indice_cursor = 0
+tempo_cursor = 0
+mostrar_cursor = True
+mensagem = ""
+cor_mensagem = (255, 255, 255)
+
+concluido = False
+tempo_conclusao = 0
+
+fontes_carregadas = False
+fonte = None
+fonte_pequena = None
+
+# --- FUNÇÃO GERENCIADORA ---
+def gerenciar_final_task(tela, lista_eventos, LARGURA, ALTURA):
+    global ativa, senha, indice_cursor, tempo_cursor, mostrar_cursor, mensagem, cor_mensagem
+    global concluido, tempo_conclusao, fontes_carregadas, fonte, fonte_pequena
+
+    if not fontes_carregadas:
+        pygame.font.init()
+        fonte = pygame.font.SysFont(None, 36)
+        fonte_pequena = pygame.font.SysFont(None, 28)
+        fontes_carregadas = True
+
+    # 1. Lógica do temporizador após vencer
+    if concluido:
+        if pygame.time.get_ticks() - tempo_conclusao >= 3000:
+            # Reseta as variáveis caso queira jogar de novo e manda de volta pro MENU (Fim do jogo)
+            senha = ""
+            indice_cursor = 0
+            mensagem = ""
+            concluido = False
+            ativa = False
+            return "MENU" # Venceu o jogo inteiro! Volta pro menu inicial.
 
     # Lógica do cursor piscando
-    tempo_cursor += dt
+    tempo_cursor += 16 # Aproximadamente o tempo de 1 frame a 60 FPS
     if tempo_cursor >= 500:
         mostrar_cursor = not mostrar_cursor
         tempo_cursor = 0
 
-    # Lógica do temporizador para fechar o jogo
-    if concluido:
-        tempo_fechamento -= dt
-        if tempo_fechamento <= 0:
-            rodando = False  # Fecha o jogo após os 3 segundos
-
-    for evento in pygame.event.get():
-        # === O JOGO NÃO FECHA MAIS PELO 'X' OU ALT+F4 SE NÃO ESTIVER CONCLUÍDO ===
-        if evento.type == pygame.QUIT:
-            if concluido:
-                rodando = False
-            else:
-                mensagem = "VOCÊ NÃO PODE FECHAR O JOGO! COLOQUE A SENHA."
-                cor_mensagem = (255, 0, 0)
-            continue
-
+    # 2. Processamento de Eventos
+    for evento in lista_eventos:
         if evento.type == pygame.MOUSEBUTTONDOWN:
             if caixa.collidepoint(evento.pos):
                 ativa = True
@@ -152,10 +144,10 @@ while rodando:
             if botao.collidepoint(evento.pos) and not concluido:
                 erros = verificar_senha(senha)
                 if len(erros) == 0:
-                    mensagem = "SENHA VÁLIDA!"
+                    mensagem = "SENHA VÁLIDA! JOGO CONCLUÍDO!"
                     cor_mensagem = (0, 255, 0)
                     concluido = True
-                    tempo_fechamento = 3000  # 3000 milissegundos = 3 segundos
+                    tempo_conclusao = pygame.time.get_ticks() # Marca a hora que venceu
                     
                     try:
                         with open("senha_salva.txt", "w", encoding="utf-8") as f:
@@ -210,10 +202,9 @@ while rodando:
                         mostrar_cursor = True
                         tempo_cursor = 0
                         
-    # --- DESENHO NA TELA ---
+    # 3. Renderização na Tela
     tela.fill((120, 60, 90))
 
-    # Título alterado para SENHA INICIAL
     titulo = fonte.render("              SENHA INICIAL", True, (255, 255, 255))
     tela.blit(titulo, (250, 30))
 
@@ -236,7 +227,6 @@ while rodando:
     texto_botao = fonte.render(" VERIFICAR", True, (255, 255, 255))
     tela.blit(texto_botao, (botao.x + 24, botao.y + 10))
 
-    # Nova exibição de texto substituindo a lista de regras antiga
     texto_instrucao = fonte_pequena.render("Coloque sua senha inicial.", True, (255, 255, 255))
     tela.blit(texto_instrucao, (70, 280))
 
@@ -244,6 +234,5 @@ while rodando:
         resultado = fonte_pequena.render(mensagem, True, cor_mensagem)
         tela.blit(resultado, (70, 520))
 
-    pygame.display.flip()
-
-pygame.quit()
+    # Mantém o jogo no estado FINAL_TASK enquanto estiver jogando
+    return "FINAL_TASK"

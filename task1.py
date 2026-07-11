@@ -155,7 +155,8 @@ def gerenciar_task1(tela, lista_eventos, LARGURA, ALTURA):
             indice_cursor = 0
             mensagem = ""
             concluido = False
-            return "MENU"
+            # --- MODIFICADO AQUI: Agora retorna "TASK3" em vez de "MENU" ---
+            return "TASK3"
 
     # Piscar do cursor
     tempo_cursor += 16
